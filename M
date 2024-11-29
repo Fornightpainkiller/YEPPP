@@ -1,0 +1,73 @@
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+-- Variables
+local LocalPlayer = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+local espBoxes = {}
+
+-- Function to create ESP box
+local function createESP(player)
+if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+local box = Drawing.new("Square")
+box.Visible = false
+box.Color = Color3.new(1, 1, 1) -- White color
+box.Thickness = 1
+box.Transparency = 1
+box.Filled = false
+
+espBoxes[player] = box
+
+RunService.RenderStepped:Connect(function()
+if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+local rootPart = player.Character.HumanoidRootPart
+local pos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+if onScreen then
+local rootPos = camera:WorldToViewportPoint(rootPart.Position)
+local headPos = camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 3, 0))
+local legPos = camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0))
+
+box.Size = Vector2.new(1400 / rootPos.Z, (headPos.Y - legPos.Y)) -- Adjusted width
+box.Position = Vector2.new(rootPos.X - box.Size.X / 2, rootPos.Y - box.Size.Y / 2)
+box.Visible = true
+else
+box.Visible = false
+end
+else
+box.Visible = false
+end
+end)
+end
+end
+
+-- Function to remove all ESP boxes
+local function removeESPBoxes()
+for _, box in pairs(espBoxes) do
+box.Visible = false
+box:Remove()
+end
+espBoxes = {}
+end
+
+-- Function to refresh ESP
+local function refreshESP()
+removeESPBoxes()
+for _, player in pairs(Players:GetPlayers()) do
+createESP(player)
+end
+end
+
+-- Refresh ESP every 5 second
+while true do
+refreshESP()
+wait(5)
+end
+
+-- Add ESP for new players
+Players.PlayerAdded:Connect(function(player)
+player.CharacterAdded:Connect(function()
+createESP(player)
+end)
+end)
